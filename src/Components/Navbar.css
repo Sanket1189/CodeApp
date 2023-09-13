@@ -1,0 +1,25 @@
+.switch {
+    position: absolute;
+
+    right: 3%;
+    top: 30%;
+    margin: auto 0;
+
+}
+
+.let {
+    position: relative;
+}
+
+
+.switch-sym:hover {
+    cursor: pointer;
+}
+
+.navbar {
+
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+}

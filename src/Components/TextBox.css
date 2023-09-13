@@ -1,0 +1,23 @@
+.text-box {
+
+    margin: 5% 10%;
+
+}
+
+h1 {
+    text-align: center;
+    padding: 20px;
+}
+
+.working-btn {
+    margin-right: 40px;
+}
+
+.textouter {
+    min-height: 100vh;
+}
+
+.text-input::placeholder {
+    color: gray;
+    font-family: 'Courier New', Courier, monospace;
+}
