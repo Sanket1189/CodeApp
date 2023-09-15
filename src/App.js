@@ -6,6 +6,8 @@ import TextBox from './Components/TextBox';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Action from './Components/Action';
 import CardBox from './Components/CardBox';
+import Slider from './Components/Slider';
+
 
 
 function App() {
@@ -60,6 +62,9 @@ function App() {
           <Route exact path="/" element={<TextBox modelevel={mode} />} />
           <Route exact path="/code" element={<Action modelevel={mode} />} />
           <Route exact path="/dogs" element={<CardBox modelevel={mode} dataget={fetchedData} />} />
+          <Route exact path="/slider" element={<Slider />} />
+
+
         </Routes>
 
       </BrowserRouter >

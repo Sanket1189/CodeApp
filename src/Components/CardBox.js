@@ -47,6 +47,7 @@ export default function CardBox(props) {
                         hasMore={items.length < props.dataget.length}
                         loader={<div className='spinner-cont'><Spinner modelevel={props.modelevel} /></div>}
                         style={{ overflowX: 'hidden' }}
+                        endMessage={<p style={{ textAlign: "center" }}>You reach the end .</p>}
 
                     >
                         <div className="row">

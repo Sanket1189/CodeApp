@@ -14,7 +14,7 @@ h1 {
 }
 
 .textouter {
-    min-height: 100vh;
+    min-height: 90vh;
 }
 
 .text-input::placeholder {
