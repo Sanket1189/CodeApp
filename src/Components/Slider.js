@@ -25,10 +25,15 @@ export default function Slider() {
             setSwitchm(false);
         }
     };
-
+    const [msg, setMsg] = useState(0);
+    const clicked = () => {
+        setMsg((prev) => prev + 1)
+    }
     return (
         <>
             <img onClick={display} style={mode} className="a" src="https://source.unsplash.com/200x200/?background" alt="gg" />
+            <div>{msg}</div>
+            <button onClick={clicked}>submit</button>
 
         </>
     )
