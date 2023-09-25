@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Action.css'
-import { str1, str2, str3, str4, str5, str6, str7, str8, str9 } from './Codes.js';
+import { str1, str2, str3, str4, str5, str6, str7, str8, str9, str10, str11 } from './Codes.js';
 
 export default function Action(props) {
 
@@ -75,6 +75,18 @@ export default function Action(props) {
                 <div className="code-ide">
                     <pre><code className="language-csharp">
                         {str9}
+                    </code></pre>
+                </div>
+                <h1>Asp.Net core Auth Controller</h1>
+                <div className="code-ide">
+                    <pre><code className="language-csharp">
+                        {str10}
+                    </code></pre>
+                </div>
+                <h1>Asp.Net core Progran.cs For Authentication</h1>
+                <div className="code-ide">
+                    <pre><code className="language-csharp">
+                        {str11}
                     </code></pre>
                 </div>
             </div >

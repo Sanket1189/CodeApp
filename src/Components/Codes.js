@@ -654,8 +654,247 @@ export default function Theme() {
 }
 
 `
+const str10 = `using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using PracticeWebApi.CommonFunction;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
-export { str1, str8, str9 };
+namespace PracticeWebApi.Controllers
+{
+    [EnableCors("AllowLocalhost3000")]
+    [ApiController]
+    [Route("[controller]")]
+    public class AuthController : ControllerBase
+
+    {
+
+        EncryptAndDecrypt end = new EncryptAndDecrypt();
+        private readonly IConfiguration configuration;
+        public AuthController(IConfiguration configuration) {
+            this.configuration = configuration;
+
+        }
+        public static User user = new User();
+
+        [HttpPost("Register")]
+        
+        public ActionResult<User> Register(UserDto request)
+        {
+            string passwordHash = end.BcrypData(request.Password);
+            user.UserName = request.UserName;
+            user.PasswordHash = passwordHash;          
+            return Ok(user);
+            
+        }
+
+        [HttpPost("Login")]
+
+        public IActionResult Login(UserDto request)
+            
+        {
+            if(user.UserName != request.UserName)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest ,"InvalidUserName");
+            }
+
+            if(!end.CheckBcrypDataIsValidOrNot(request.Password , user.PasswordHash)){
+                return StatusCode(StatusCodes.Status400BadRequest ,"Invalid Password");
+            }
+
+            var token = CreateWebToken(user);
+
+            var refreshToken = GenerateRefreshToken();
+            SetRefreshToken(refreshToken);
+
+            var details = new
+            {
+                accessToken = token,
+                refreshToken = refreshToken
+            };
+
+
+            return StatusCode(StatusCodes.Status200OK, new { details });
+        }
+
+
+        [HttpPost("RefreshToken")]
+
+        public IActionResult RefreshToken([FromBody] string refreshToken)
+        {
+           
+
+            if (!user.RefreshToken.Equals(refreshToken))
+            {
+                return StatusCode(StatusCodes.Status401Unauthorized, "Invalid Refresh Token");
+            }
+            else if (user.TokenExpires < DateTime.Now)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, "RefreshTokenExpired");
+            }
+
+            var token = CreateWebToken(user);
+            
+
+            return StatusCode(StatusCodes.Status200OK, new { token });
+        }
+
+
+
+        private RefreshToken GenerateRefreshToken()
+        {
+            RefreshToken refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Expires = DateTime.Now.AddDays(7)
+
+            };
+
+            return refreshToken;//sanket
+        }
+
+
+        private void SetRefreshToken(RefreshToken refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = refreshToken.Expires
+            };
+
+            Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
+            user.RefreshToken = refreshToken.Token   ; 
+            user.TokenCreated = refreshToken.Created ;
+            user.TokenExpires = refreshToken.Expires ;
+        }
+
+        private string CreateWebToken(User user)
+        {
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name , user.UserName)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetSection("AppSettings:Token").Value!));
+
+            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.UtcNow.AddSeconds(30),
+                signingCredentials: cred
+                );
+
+            var jwt= new JwtSecurityTokenHandler().WriteToken(token);
+
+            return jwt;
+        }
+    }
+}
+`
+
+const str11 = `using Microsoft.AspNetCore.Authentication.JwtBearer;
+//using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using PracticeWebApi.Models;
+using PracticeWebApi.Process;
+using PracticeWebApi.Repository;
+using Swashbuckle.AspNetCore.Filters;
+using System.Text;
+
+
+
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("oauth2" , new OpenApiSecurityScheme
+    {
+        Description ="Standared Authorization",
+        In = ParameterLocation.Header ,
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+
+    options.OperationFilter<SecurityRequirementsOperationFilter>();
+});
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+IConfiguration configuration = builder.Configuration;
+//builder.Services.AddIdentity<IdentityUser  ,IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+//    .AddEntityFrameworkStores<PracticeContext>();
+
+
+
+
+string mySqlConnectionStr = configuration.GetConnectionString("DefaultConnection")!;
+
+builder.Services.AddScoped(typeof(ICustomerInProcess), typeof(CustomerInProcess));
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddSingleton<IConfiguration>(configuration);    
+builder.Services.AddDbContext<PracticeContext>(options =>
+            options.UseMySql(mySqlConnectionStr,
+            ServerVersion.AutoDetect(mySqlConnectionStr)
+           ));
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost3000",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:3000") 
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+});
+
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+
+app.UseCors("AllowLocalhost3000"); 
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+`
+
+export { str1, str8, str9, str10, str11 };
 export { str2 };
 export { str3 };
 export { str4 };
